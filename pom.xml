@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.sonatype.nexus.plugins</groupId>
+        <artifactId>nexus-plugins</artifactId>
+        <version>3.12.0-01</version>
+    </parent>
+    <groupId>org.sonatype.nexus.plugins</groupId>
+    <artifactId>nexus-repository-cargo</artifactId>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <version>1.0.0-SNAPSHOT</version>
+    <inceptionYear>2018</inceptionYear>
+    <packaging>bundle</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.sonatype.nexus</groupId>
+            <artifactId>nexus-plugin-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.sonatype.nexus</groupId>
+            <artifactId>nexus-repository</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <compilerId>javac</compilerId>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>karaf-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
