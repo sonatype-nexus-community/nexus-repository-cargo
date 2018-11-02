@@ -15,6 +15,7 @@ import javax.inject.Singleton;
 
 import org.sonatype.nexus.plugins.cargo.CargoFormat;
 import org.sonatype.nexus.plugins.cargo.CargoRecipeSupport;
+import org.sonatype.nexus.plugins.cargo.git.GitRepositoryHandlers;
 import org.sonatype.nexus.repository.Format;
 import org.sonatype.nexus.repository.Repository;
 import org.sonatype.nexus.repository.Type;
@@ -30,6 +31,7 @@ import org.sonatype.nexus.repository.view.Route;
 import org.sonatype.nexus.repository.view.Router;
 import org.sonatype.nexus.repository.view.ViewFacet;
 import org.sonatype.nexus.repository.view.matchers.ActionMatcher;
+import org.sonatype.nexus.repository.view.matchers.token.TokenMatcher;
 
 @Named(CargoHostedRecipe.NAME)
 @Singleton
@@ -37,6 +39,18 @@ class CargoHostedRecipe
         extends CargoRecipeSupport
 {
     public static final String NAME = "cargo-hosted";
+
+    @Inject
+    protected GitRepositoryHandlers.Default gitDefaultHandler;
+
+    @Inject
+    protected GitRepositoryHandlers.InfoRefs gitInfoRefsHandler;
+
+    @Inject
+    protected GitRepositoryHandlers.ReceivePackService gitReceivePackHandler;
+
+    @Inject
+    protected GitRepositoryHandlers.UploadPackService gitUploadPackHandler;
 
     @Inject
     CargoHostedRecipe(@Named(HostedType.NAME) final Type type, @Named(CargoFormat.NAME) final Format format) {
@@ -56,6 +70,30 @@ class CargoHostedRecipe
     private ViewFacet configure(final ConfigurableViewFacet facet) {
         Router.Builder builder = new Router.Builder();
 
+        // Git HTTP protocol reference discovery
+        builder.route(new Route.Builder().matcher(new TokenMatcher("/{repo_name:index}/info/refs"))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(contentHeadersHandler).handler(unitOfWorkHandler)
+                .handler(gitInfoRefsHandler).create());
+
+        // Git client fetching objects over Smart HTTP protocol
+        builder.route(new Route.Builder().matcher(new TokenMatcher("/{repo_name:index}/git-upload-pack"))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(contentHeadersHandler).handler(unitOfWorkHandler)
+                .handler(gitUploadPackHandler).create());
+
+        // Git client pushing objects over Smart HTTP protocol
+        builder.route(new Route.Builder().matcher(new TokenMatcher("/{repo_name:index}/git-receive-pack"))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(contentHeadersHandler).handler(unitOfWorkHandler)
+                .handler(gitUploadPackHandler).create());
+
+        // 404 anything else inside the index Git repo
+        builder.route(new Route.Builder().matcher(new TokenMatcher("/{repo_name:index}/.*")).handler(timingHandler)
+                .handler(securityHandler).handler(exceptionHandler).handler(conditionalRequestHandler)
+                .handler(contentHeadersHandler).handler(unitOfWorkHandler).handler(gitDefaultHandler).create());
+
+        // Crates.io API v1
         builder.route(new Route.Builder().matcher(new ActionMatcher(HttpMethods.GET)).handler(timingHandler)
                 .handler(securityHandler).handler(exceptionHandler).handler(conditionalRequestHandler)
                 .handler(partialFetchHandler).handler(contentHeadersHandler).handler(unitOfWorkHandler)

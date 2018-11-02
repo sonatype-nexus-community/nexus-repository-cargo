@@ -13,9 +13,12 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.sonatype.nexus.repository.config.Configuration;
+import org.sonatype.nexus.repository.http.HttpMethods;
 import org.sonatype.nexus.repository.security.ContentPermissionChecker;
 import org.sonatype.nexus.repository.security.SecurityFacetSupport;
 import org.sonatype.nexus.repository.security.VariableResolverAdapter;
+import org.sonatype.nexus.repository.view.Request;
+import org.sonatype.nexus.security.BreadActions;
 
 /**
  * Cargo format security facet.
@@ -32,8 +35,29 @@ public class CargoSecurityFacet
         super(securityResource, variableResolverAdapter, contentPermissionChecker);
     }
 
+    // This needs to exist so that Configuration is imported correctly. The
+    // bundle will fail to load due to Guice being unable to find the class otherwise.
     @Override
-    protected void doValidate(final Configuration configuration) throws Exception {
+    protected void doValidate(Configuration configuration) throws Exception {
         super.doValidate(configuration);
+    }
+
+    @Override
+    protected String action(Request request) {
+        if (request.getAction().equals(HttpMethods.POST) &&
+                request.getPath().equals("/index/git-upload-pack")) {
+            // Git Smart HTTP protocol uses a POST request for reading the repo so
+            // the client can set Git pack-format messages to indicate what objects
+            // it wants.
+            return BreadActions.READ;
+        } else if (request.getAction().equals(HttpMethods.POST) &&
+                request.getPath().equals("/index/git-receive-pack")) {
+            // Normally, the index will only be written to by Nexus. If a user
+            // has edit permissions, let them commit arbitrary things to the
+            // index anyway.
+            return BreadActions.EDIT;
+        } else {
+            return super.action(request);
+        }
     }
 }
