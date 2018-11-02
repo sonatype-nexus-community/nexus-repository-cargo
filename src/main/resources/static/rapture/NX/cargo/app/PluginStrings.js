@@ -19,7 +19,9 @@ Ext.define('NX.cargo.app.PluginStrings', {
     ],
 
     keys: {
-        Repository_Facet_CargoFacet_Title: 'Cargo Settings',
+        Repository_Facet_CargoRegistryFacet_Title: 'Cargo Settings',
+        Repository_Facet_CargoRegistryFacet_AllowedRegistries_FieldLabel: 'Allowed External Registries',
+        Repository_Facet_CargoRegistryFacet_AllowedRegistries_HelpText: '',
         SearchCargo_Group: 'Cargo Repositories',
         SearchCargo_License_FieldLabel: 'License',
         SearchCargo_Text: 'Cargo',
