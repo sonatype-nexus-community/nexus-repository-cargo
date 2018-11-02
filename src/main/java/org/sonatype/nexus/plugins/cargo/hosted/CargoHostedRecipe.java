@@ -15,26 +15,28 @@ package org.sonatype.nexus.plugins.cargo.hosted;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import org.sonatype.nexus.plugins.cargo.CargoFormat;
 import org.sonatype.nexus.plugins.cargo.CargoRecipeSupport;
-import org.sonatype.nexus.plugins.cargo.git.GitRepositoryHandlers;
+import org.sonatype.nexus.plugins.cargo.CargoRegistryFacet;
+import org.sonatype.nexus.plugins.cargo.GitRepositoryFacet;
+import org.sonatype.nexus.plugins.cargo.registry.v1.CargoRegistryV1Handlers;
+import org.sonatype.nexus.plugins.cargo.security.CargoRegistryBearerTokenHandlers;
 import org.sonatype.nexus.repository.Format;
 import org.sonatype.nexus.repository.Repository;
 import org.sonatype.nexus.repository.Type;
 import org.sonatype.nexus.repository.http.HttpHandlers;
 import org.sonatype.nexus.repository.http.HttpMethods;
-import org.sonatype.nexus.repository.http.HttpResponses;
 import org.sonatype.nexus.repository.types.HostedType;
 import org.sonatype.nexus.repository.view.ConfigurableViewFacet;
-import org.sonatype.nexus.repository.view.Context;
-import org.sonatype.nexus.repository.view.Handler;
-import org.sonatype.nexus.repository.view.Response;
 import org.sonatype.nexus.repository.view.Route;
 import org.sonatype.nexus.repository.view.Router;
 import org.sonatype.nexus.repository.view.ViewFacet;
 import org.sonatype.nexus.repository.view.matchers.ActionMatcher;
+import org.sonatype.nexus.repository.view.matchers.LiteralMatcher;
+import org.sonatype.nexus.repository.view.matchers.logic.LogicMatchers;
 import org.sonatype.nexus.repository.view.matchers.token.TokenMatcher;
 
 @Named(CargoHostedRecipe.NAME)
@@ -45,16 +47,34 @@ class CargoHostedRecipe
     public static final String NAME = "cargo-hosted";
 
     @Inject
-    protected GitRepositoryHandlers.Default gitDefaultHandler;
+    protected Provider<CargoRegistryFacet> crateStorageFacet;
 
     @Inject
-    protected GitRepositoryHandlers.InfoRefs gitInfoRefsHandler;
+    protected Provider<GitRepositoryFacet> gitRepositoryFacet;
 
     @Inject
-    protected GitRepositoryHandlers.ReceivePackService gitReceivePackHandler;
+    protected CargoRegistryBearerTokenHandlers.Get tokenGetHandler;
 
     @Inject
-    protected GitRepositoryHandlers.UploadPackService gitUploadPackHandler;
+    protected CargoRegistryBearerTokenHandlers.Delete tokenDeleteHandler;
+
+    @Inject
+    protected CargoRegistryV1Handlers.Publish cratePublishHandler;
+
+    @Inject
+    protected CargoRegistryV1Handlers.CrateDownload crateDownloadHandler;
+
+    @Inject
+    protected CargoRegistryV1Handlers.MetadataDownload metadataDownloadHandler;
+
+    @Inject
+    protected CargoRegistryV1Handlers.IndexInfoRefs gitInfoRefsHandler;
+
+    @Inject
+    protected CargoRegistryV1Handlers.IndexRecievePackService gitReceivePackHandler;
+
+    @Inject
+    protected CargoRegistryV1Handlers.IndexUploadPackService gitUploadPackHandler;
 
     @Inject
     CargoHostedRecipe(@Named(HostedType.NAME) final Type type, @Named(CargoFormat.NAME) final Format format) {
@@ -69,6 +89,8 @@ class CargoHostedRecipe
         repository.attach(searchFacet.get());
         repository.attach(attributesFacet.get());
         repository.attach(componentMaintenanceFacet.get());
+        repository.attach(crateStorageFacet.get());
+        repository.attach(gitRepositoryFacet.get());
     }
 
     private ViewFacet configure(final ConfigurableViewFacet facet) {
@@ -92,23 +114,46 @@ class CargoHostedRecipe
                 .handler(conditionalRequestHandler).handler(contentHeadersHandler).handler(unitOfWorkHandler)
                 .handler(gitUploadPackHandler).create());
 
-        // 404 anything else inside the index Git repo
-        builder.route(new Route.Builder().matcher(new TokenMatcher("/{repo_name:index}/.*")).handler(timingHandler)
-                .handler(securityHandler).handler(exceptionHandler).handler(conditionalRequestHandler)
-                .handler(contentHeadersHandler).handler(unitOfWorkHandler).handler(gitDefaultHandler).create());
-
         // Crates.io API v1
-        builder.route(new Route.Builder().matcher(new ActionMatcher(HttpMethods.GET)).handler(timingHandler)
-                .handler(securityHandler).handler(exceptionHandler).handler(conditionalRequestHandler)
-                .handler(partialFetchHandler).handler(contentHeadersHandler).handler(unitOfWorkHandler)
-                .handler(new Handler()
-                {
+        builder.route(new Route.Builder()
+                .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.GET), new LiteralMatcher("/token")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(tokenGetHandler).create());
 
-                    @Override
-                    public Response handle(Context context) throws Exception {
-                        return HttpResponses.notImplemented(context.toString());
-                    }
-                }).create());
+        builder.route(new Route.Builder()
+                .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.DELETE), new LiteralMatcher("/token")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(tokenDeleteHandler).create());
+
+        builder.route(new Route.Builder()
+                .matcher(
+                        LogicMatchers.and(new ActionMatcher(HttpMethods.PUT), new LiteralMatcher("/api/v1/crates/new")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(cratePublishHandler).create());
+
+        builder.route(new Route.Builder()
+                .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.HEAD, HttpMethods.GET),
+                        new TokenMatcher("/api/v1/crates/{name:.+}/{version:.+}/download")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(crateDownloadHandler).create());
+
+        builder.route(new Route.Builder()
+                .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.HEAD, HttpMethods.GET),
+                        new TokenMatcher("/{name:.+}-{version:.+}.crate")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(crateDownloadHandler).create());
+
+        builder.route(new Route.Builder()
+                .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.HEAD, HttpMethods.GET),
+                        new TokenMatcher("/{name:.+}-{version:.+}.json")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(metadataDownloadHandler).create());
 
         builder.defaultHandlers(HttpHandlers.notFound());
         facet.configure(builder.create());

@@ -18,6 +18,7 @@ Ext.define('NX.cargo.view.repository.recipe.CargoHosted', {
     extend: 'NX.coreui.view.repository.RepositorySettingsForm',
     alias: 'widget.nx-coreui-repository-cargo-hosted',
     requires: [
+        'NX.cargo.view.repository.facet.CargoRegistryFacet',
         'NX.coreui.view.repository.facet.StorageFacet',
         'NX.coreui.view.repository.facet.StorageFacetHosted'
     ],
@@ -30,7 +31,8 @@ Ext.define('NX.cargo.view.repository.recipe.CargoHosted', {
 
         me.items = [
             { xtype: 'nx-coreui-repository-storage-facet' },
-            { xtype: 'nx-coreui-repository-storage-hosted-facet' }
+            { xtype: 'nx-coreui-repository-storage-hosted-facet' },
+            { xtype: 'nx-cargo-repository-cargo-registry-facet' }
         ];
 
         me.callParent();
