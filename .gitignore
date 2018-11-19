@@ -1,0 +1,11 @@
+bin/
+target/
+
+# VS Code
+.vscode/
+
+# Eclipse
+.classpath
+.factorypath
+.project
+.settings/
