@@ -1,0 +1,17 @@
+bin/
+target/
+
+# VS Code
+.vscode/
+
+# Eclipse
+.classpath
+.factorypath
+.project
+.settings/
+
+# Intellij
+*.ipr
+*.iml
+*.iws
+.idea/
