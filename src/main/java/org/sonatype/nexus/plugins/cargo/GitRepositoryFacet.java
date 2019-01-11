@@ -18,7 +18,7 @@ import java.io.IOException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.eclipse.jgit.lib.Repository;
+import org.sonatype.nexus.plugins.cargo.git.repo.Repository;
 import org.sonatype.nexus.repository.Facet;
 import org.sonatype.nexus.repository.Facet.Exposed;
 
@@ -31,4 +31,7 @@ public interface GitRepositoryFacet
 
     @Nullable
     public Repository getGitRepository(String name) throws IOException;
+
+    public void replaceFile(Repository repository, String branch, String entryPath, byte[] bytes)
+            throws IOException;
 }
