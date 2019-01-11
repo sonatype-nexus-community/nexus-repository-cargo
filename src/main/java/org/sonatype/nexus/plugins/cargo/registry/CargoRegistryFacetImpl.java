@@ -27,25 +27,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-import org.eclipse.jgit.dircache.DirCache;
-import org.eclipse.jgit.dircache.DirCacheBuilder;
-import org.eclipse.jgit.dircache.DirCacheEditor;
-import org.eclipse.jgit.dircache.DirCacheEntry;
-import org.eclipse.jgit.lib.AnyObjectId;
-import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.FileMode;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectInserter;
-import org.eclipse.jgit.lib.PersonIdent;
-import org.eclipse.jgit.lib.RefUpdate;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.sonatype.nexus.email.EmailManager;
 import org.sonatype.nexus.plugins.cargo.CargoRegistryFacet;
 import org.sonatype.nexus.plugins.cargo.CrateCoordinates;
 import org.sonatype.nexus.plugins.cargo.GitRepositoryFacet;
+import org.sonatype.nexus.plugins.cargo.git.repo.Repository;
 import org.sonatype.nexus.plugins.cargo.registry.assets.AssetKindMetadataAttributes;
 import org.sonatype.nexus.plugins.cargo.registry.assets.AssetKindTarballAttributes;
 import org.sonatype.nexus.plugins.cargo.registry.assets.ComponentKindCrateAttributes;
@@ -147,7 +134,8 @@ public class CargoRegistryFacetImpl
         if (requestUrl == null)
             return;
 
-        Repository indexRepo = this.getRepository().facet(GitRepositoryFacet.class).getGitRepository("index");
+        GitRepositoryFacet gitFacet = this.getRepository().facet(GitRepositoryFacet.class);
+        Repository indexRepo = gitFacet.getGitRepository("index");
 
         // Generate config.json with the current repository URL
         JsonObject config = new JsonObject();
@@ -157,73 +145,8 @@ public class CargoRegistryFacetImpl
         allowedRegistries.add(new JsonPrimitive(this.config.allowedRegistries.toString()));
         config.add("allowed-registries", allowedRegistries);
 
-        // Calculate the ObjectId for the generated config.json and insert it into the object index.
-        ObjectInserter ins = indexRepo.newObjectInserter();
-        byte[] configBytes = config.toString().getBytes(StandardCharsets.UTF_8);
-        AnyObjectId configObjId = ins.idFor(Constants.OBJ_BLOB, configBytes);
-        ins.insert(Constants.OBJ_BLOB, configBytes);
-        ins.flush();
-
-        // Start with a blank tree.
-        DirCache dirCache = DirCache.newInCore();
-        RevCommit parent = null;
-
-        // If there is a current HEAD, read that commit's tree. It will become
-        // our parent.
-        AnyObjectId headId = indexRepo.resolve(this.indexBranch + "^{commit}"); //$NON-NLS-1$
-        if (headId != null) {
-            try (RevWalk revWalk = new RevWalk(indexRepo)) {
-                parent = revWalk.parseCommit(headId);
-                DirCacheBuilder builder = dirCache.builder();
-                builder.addTree(null, DirCacheEntry.STAGE_0, indexRepo.newObjectReader(), parent.getTree());
-                builder.finish();
-            }
-        }
-
-        // Update config.json in the tree to point to the correct ObjectId.
-        DirCacheEditor editor = dirCache.editor();
-        editor.add(new DirCacheEditor.PathEdit("config.json")
-        {
-            @Override
-            public void apply(DirCacheEntry ent) {
-                ent.setFileMode(FileMode.REGULAR_FILE);
-                ent.setObjectId(configObjId);
-            }
-        });
-        editor.finish();
-        AnyObjectId indexTreeId = dirCache.writeTree(ins);
-
-        // Check for empty commits
-        if (parent != null && indexTreeId.equals(parent.getTree())) {
-            return;
-        }
-
-        // Create a Commit object, populate it and write it
-        PersonIdent adminIdent = new PersonIdent("Nexus System", this.emailManager.getConfiguration().getFromAddress());
-        CommitBuilder commit = new CommitBuilder();
-        commit.setCommitter(adminIdent);
-        commit.setAuthor(adminIdent);
-        commit.setMessage("Update registry URL to " + this.getRepository().getUrl());
-        if (parent != null) {
-            commit.setParentIds(parent);
-        }
-        commit.setTreeId(indexTreeId);
-        AnyObjectId commitId = ins.insert(commit);
-        ins.flush();
-
-        try (RevWalk revWalk = new RevWalk(indexRepo)) {
-            RevCommit revCommit = revWalk.parseCommit(commitId);
-            RefUpdate headUpdate = indexRepo.updateRef(this.indexBranch);
-            headUpdate.setNewObjectId(commitId);
-            String reflogMsgPrefix = parent == null ? "commit (initial): " : "commit: ";
-            headUpdate.setRefLogMessage(reflogMsgPrefix + revCommit.getShortMessage(), false);
-
-            if (headId != null)
-                headUpdate.setExpectedOldObjectId(headId);
-            else
-                headUpdate.setExpectedOldObjectId(ObjectId.zeroId());
-            headUpdate.forceUpdate();
-        }
+        gitFacet.replaceFile(indexRepo, this.indexBranch, "config.json",
+                config.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
