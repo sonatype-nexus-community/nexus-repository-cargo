@@ -14,6 +14,8 @@ import org.sonatype.nexus.repository.view.Response;
 @Exposed
 public interface CargoRegistryFacet extends Facet {
     public void writeConfigJson() throws Exception;
+    
+    public void rebuildIndexForCrate(CrateCoordinates crateId) throws IOException;
 
     public Response publishCrate(CrateCoordinates crateId, JsonElement metadata,
             InputStream tarball)

@@ -2,6 +2,7 @@
 package org.sonatype.nexus.plugins.cargo.registry;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -19,6 +20,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.lib.Constants;
 import org.sonatype.nexus.email.EmailManager;
 import org.sonatype.nexus.plugins.cargo.CargoRegistryFacet;
@@ -141,6 +143,32 @@ public class CargoRegistryFacetImpl extends FacetSupport implements CargoRegistr
     }
 
     @Override
+    @TransactionalTouchBlob
+    @TransactionalStoreMetadata
+    public void rebuildIndexForCrate(CrateCoordinates crateId) throws IOException {
+        StorageTx tx = UnitOfWork.currentTx();
+        Bucket bucket = tx.findBucket(this.getRepository());
+
+        ByteArrayOutputStream crate_index_entry = new ByteArrayOutputStream();
+
+        for (Component component : this.crateAttributes.findAllVersions(this.getRepository(),
+                crateId.getName())) {
+            Content crate_metadata_json = this.metadataAttributes.getAssetContent(bucket,
+                    component);
+
+            // Metadata is already in single-line, compact JSON form per publishCrate().
+            IOUtils.copy(crate_metadata_json.openInputStream(), crate_index_entry);
+            crate_index_entry.write('\n');
+        }
+
+        GitRepositoryFacet gitFacet = this.getRepository().facet(GitRepositoryFacet.class);
+        Repository indexRepo = gitFacet.getGitRepository("index");
+
+        gitFacet.replaceFile(indexRepo, this.indexBranch, crateId.getIndexEntryPath(),
+                crate_index_entry.toByteArray());
+    }
+
+    @Override
     @TransactionalStoreMetadata
     @TransactionalStoreBlob
     public Response publishCrate(CrateCoordinates crateId, JsonElement metadata,
@@ -159,6 +187,9 @@ public class CargoRegistryFacetImpl extends FacetSupport implements CargoRegistr
 
         crateComponent = this.crateAttributes.create(this.getRepository(), crateId);
 
+        // Store metadata as compact JSON, no whitespace or newlines. This
+        // avoids index rebuilds needing to parse and regenerated every metadata
+        // entry.
         this.metadataAttributes.createAsset(bucket, crateComponent,
                 new ByteArrayInputStream(
                         new Gson().toJson(metadata).getBytes(StandardCharsets.UTF_8)));
