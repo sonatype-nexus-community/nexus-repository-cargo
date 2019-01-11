@@ -58,6 +58,18 @@ public class ComponentKindCrateAttributes {
         return Iterables.getOnlyElement(components, null);
     }
 
+    @TransactionalTouchMetadata
+    public Iterable<Component> findAllVersions(Repository repository, String crateName) throws IOException {
+        StorageTx tx = UnitOfWork.currentTx();
+
+        return tx.findComponents(
+                Query.builder()
+                        .where(ComponentEntityAdapter.P_GROUP).eq(I_GROUP_CRATE)
+                        .and(ComponentEntityAdapter.P_NAME).eq(crateName)
+                        .build(),
+                Collections.singletonList(repository));
+    }
+
     public CrateCoordinates getCoordinates(Component component) {
         return new CrateCoordinates(component.name(), new Semver(component.version()));
     }
