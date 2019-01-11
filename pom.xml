@@ -1,96 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.sonatype.nexus.plugins</groupId>
-        <artifactId>nexus-plugins</artifactId>
-        <version>3.12.0-01</version>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
     <groupId>org.sonatype.nexus.plugins</groupId>
-    <artifactId>nexus-repository-cargo</artifactId>
-    <name>${project.groupId}:${project.artifactId}</name>
-    <version>1.0.0-SNAPSHOT</version>
-    <inceptionYear>2018</inceptionYear>
-    <packaging>bundle</packaging>
+    <artifactId>nexus-plugins</artifactId>
+    <version>3.12.0-01</version>
+  </parent>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.sonatype.nexus</groupId>
-            <artifactId>nexus-plugin-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
+  <artifactId>nexus-repository-cargo</artifactId>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <version>0.0.1</version>
+  <inceptionYear>2018</inceptionYear>
+  <packaging>bundle</packaging>
 
-        <dependency>
-            <groupId>org.sonatype.nexus</groupId>
-            <artifactId>nexus-repository</artifactId>
-            <scope>provided</scope>
-        </dependency>
+  <dependencies>
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-plugin-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
-        <dependency>
-            <groupId>org.sonatype.nexus</groupId>
-            <artifactId>nexus-rapture</artifactId>
-            <scope>provided</scope>
-        </dependency>
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-repository</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
-        <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-            <version>5.0.1.201806211838-r</version>
-        </dependency>
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-rapture</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
-        <dependency>
-            <groupId>com.vdurmont</groupId>
-            <artifactId>semver4j</artifactId>
-            <version>2.2.0</version>
-        </dependency>
-    </dependencies>
+    <dependency>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <version>5.0.1.201806211838-r</version>
+    </dependency>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <compilerId>javac</compilerId>
-                </configuration>
-            </plugin>
+    <dependency>
+      <groupId>com.vdurmont</groupId>
+      <artifactId>semver4j</artifactId>
+      <version>2.2.0</version>
+    </dependency>
+  </dependencies>
 
-            <plugin>
-                <groupId>org.sonatype.nexus.buildsupport</groupId>
-                <artifactId>extjs-maven-plugin</artifactId>
-                <configuration>
-                    <namespace>NX.cargo</namespace>
-                </configuration>
-            </plugin>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <compilerId>javac</compilerId>
+        </configuration>
+      </plugin>
 
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>yuicompressor-maven-plugin</artifactId>
-            </plugin>
+      <plugin>
+        <groupId>org.sonatype.nexus.buildsupport</groupId>
+        <artifactId>extjs-maven-plugin</artifactId>
+        <configuration>
+          <namespace>NX.cargo</namespace>
+        </configuration>
+      </plugin>
 
-            <plugin>
-                <groupId>org.apache.karaf.tooling</groupId>
-                <artifactId>karaf-maven-plugin</artifactId>
-            </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>yuicompressor-maven-plugin</artifactId>
+      </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.20</version>
-            </plugin>
+      <plugin>
+        <groupId>org.apache.karaf.tooling</groupId>
+        <artifactId>karaf-maven-plugin</artifactId>
+      </plugin>
 
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <configuration>
-                    <instructions>
-                        <Embed-Dependency>*;scope=compile|runtime;inline=true;artifactId=!slf4j*</Embed-Dependency>
-                        <Embed-Transitive>true</Embed-Transitive>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.20</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Embed-Dependency>*;scope=compile|runtime;inline=true;artifactId=!slf4j*</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

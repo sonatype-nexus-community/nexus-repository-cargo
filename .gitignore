@@ -9,3 +9,9 @@ target/
 .factorypath
 .project
 .settings/
+
+# Intellij
+*.ipr
+*.iml
+*.iws
+.idea/
