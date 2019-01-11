@@ -18,11 +18,7 @@
 
 TBD
 
-### Proxying
-
-TBD
-
-### Hosting
+### Hosting your own crates
 
 TBD
 

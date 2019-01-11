@@ -56,16 +56,10 @@ All released versions can be found [here](https://github.com/sonatype-nexus-comm
 | Feature | Implemented          |
 |---------|----------------------|
 | Proxy   |                      |
-| Hosted  |                      |
+| Hosted  | :heavy_check_mark:   |
 | Group   |                      |
 
 ### Supported Cargo Commands
-
-#### Proxy
-
-| Plugin Version               | Implemented              |
-|------------------------------|--------------------------|
-|                              | :heavy_check_mark:       |
 
 #### Hosted
 
