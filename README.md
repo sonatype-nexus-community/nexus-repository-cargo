@@ -22,15 +22,21 @@ If everything checks out, the bundle for cargo should be available in the `targe
 
 #### Build with Docker
 
-`docker build -t nexus-repository-cargo:0.0.1 .`
+`docker build -t nexus-repository-cargo .`
 
 #### Run as a Docker container
 
-`docker run -d -p 8081:8081 --name nexus nexus-repository-cargo:0.0.1`
+`docker run -d -p 8081:8081 --name nexus nexus-repository-cargo`
 
 For further information like how to persist volumes check out [the GitHub repo for our official image](https://github.com/sonatype/docker-nexus3).
 
-The application will now be available from your browser at http://localhost:8081
+After allowing some time to spin up, the application will be available from your browser at http://localhost:8081.
+
+To read the generated admin password for your first login to the web UI, you can use the command below against the running docker container:
+
+    docker exec -it nexus-repository-cargo cat /nexus-data/admin.password && echo
+
+For simplicity, you should check `Enable anonymous access` in the prompts following your first login.
 
 ## Using Cargo With Nexus Repository Manager 3
 
