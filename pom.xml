@@ -27,6 +27,29 @@
       <artifactId>nexus-repository</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-rapture</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-testsupport</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <version>5.0.1.201806211838-r</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.vdurmont</groupId>
+      <artifactId>semver4j</artifactId>
+      <version>2.2.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -64,6 +87,19 @@
       </plugin>
 
       <plugin>
+        <groupId>org.sonatype.nexus.buildsupport</groupId>
+        <artifactId>extjs-maven-plugin</artifactId>
+        <configuration>
+          <namespace>NX.cargo</namespace>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>yuicompressor-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.karaf.tooling</groupId>
         <artifactId>karaf-maven-plugin</artifactId>
       </plugin>
@@ -73,6 +109,18 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.20</version>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Embed-Dependency>*;scope=compile|runtime;inline=true;artifactId=!slf4j*</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+          </instructions>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 </project>
