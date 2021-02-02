@@ -12,5 +12,5 @@ FROM sonatype/nexus3:$NEXUS_VERSION
 
 ARG DEPLOY_DIR=/opt/sonatype/nexus/deploy/
 USER root
-COPY --from=build /nexus-repository-cargo/nexus-repository-cargo/target/nexus-repository-cargo-*-bundle.kar ${DEPLOY_DIR}
+COPY --from=build /nexus-repository-cargo/target/nexus-repository-cargo-*-bundle.kar ${DEPLOY_DIR}
 USER nexus
