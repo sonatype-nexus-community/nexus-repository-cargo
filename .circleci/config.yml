@@ -1,0 +1,63 @@
+version: 2.1
+
+orbs:
+  github-maven-deploy: github-maven-deploy/github-maven-deploy@1.0.5
+  circleci-maven-release-orb: sonatype-nexus-community/circleci-maven-release-orb@0.0.16
+
+executors:
+  nxrm-maven-executor:
+    docker:
+      - image: circleci/openjdk:8-jdk
+    environment:
+      # limit max memory for JVM to allow more memory for non-JVM build processes (e.g. yarn)
+      MAVEN_OPTS: -Xmx2700m
+
+build-and-test-commands: &build-and-test-commands
+  executor: nxrm-maven-executor
+  mvn-build-test-command: mvn --batch-mode clean verify -PbuildKar -Dit
+  mvn-collect-artifacts-command: |
+    mkdir -p ~/project/artifacts/junit/
+    find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/project/artifacts/junit/ \;
+    find . -type f -regex ".*/target/failsafe-reports/.*xml" -exec cp {} ~/project/artifacts/junit/ \;
+
+release-args: &release-args
+  executor: nxrm-maven-executor
+  mvn-release-perform-command: mvn --batch-mode release:perform -s .circleci/.maven.xml -PbuildKar
+  ssh-fingerprints: "yo:ur:ss:hf:in:ge:rp:ri:nt:he:re..."
+  context: rso-base
+  filters:
+    branches:
+      only: master
+
+workflows:
+  build-branch:
+    jobs:
+      - github-maven-deploy/build-and-test:
+          <<: *build-and-test-commands
+          filters:
+            branches:
+              ignore: master
+
+  run-release:
+    jobs:
+      - approve-release:
+          type: approval
+          filters:
+            branches:
+              only: master
+      - circleci-maven-release-orb/run-maven-release:
+          requires:
+            - approve-release
+          <<: *release-args
+
+  release-from-master:
+    jobs:
+      - github-maven-deploy/build-and-test:
+          <<: *build-and-test-commands
+          filters:
+            branches:
+              only: master
+      - circleci-maven-release-orb/run-maven-release:
+          requires:
+            - github-maven-deploy/build-and-test
+          <<: *release-args
