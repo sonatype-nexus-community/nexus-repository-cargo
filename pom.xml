@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.sonatype.nexus.plugins</groupId>
     <artifactId>nexus-plugins</artifactId>
-    <version>3.12.0-01</version>
+    <version>3.29.2-02</version>
   </parent>
 
   <artifactId>nexus-repository-cargo</artifactId>
@@ -56,6 +56,29 @@
           <target>1.8</target>
           <compilerId>javac</compilerId>
         </configuration>
+      </plugin>
+
+      <!--
+      Ensure use of Java 8, as required by NXRM
+      -->
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-java</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[1.8,1.9)</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
