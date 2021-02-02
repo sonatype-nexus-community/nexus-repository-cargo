@@ -26,7 +26,7 @@ If everything checks out, the bundle for cargo should be available in the `targe
 
 #### Run as a Docker container
 
-`docker run -d -p 8081:8081 --name nexus nexus-repository-cargo`
+`docker run -d -p 8081:8081 --name nexus-repository-cargo nexus-repository-cargo`
 
 For further information like how to persist volumes check out [the GitHub repo for our official image](https://github.com/sonatype/docker-nexus3).
 
