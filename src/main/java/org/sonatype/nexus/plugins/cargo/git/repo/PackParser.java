@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.zip.CRC32;
 import java.util.zip.InflaterInputStream;
 
+import org.sonatype.nexus.repository.view.payloads.TempBlob;
+
 import org.eclipse.jgit.internal.storage.file.PackLock;
 import org.eclipse.jgit.lib.AnyObjectId;
 import org.eclipse.jgit.lib.Constants;
@@ -27,7 +29,6 @@ import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.transport.PackedObjectInfo;
-import org.sonatype.nexus.repository.view.payloads.TempBlob;
 
 public class PackParser
         extends org.eclipse.jgit.transport.PackParser

@@ -16,7 +16,6 @@ package org.sonatype.nexus.plugins.cargo.git.repo;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.eclipse.jgit.lib.ObjectId;
 import org.sonatype.nexus.plugins.cargo.git.Constants;
 import org.sonatype.nexus.plugins.cargo.git.assets.AssetKindObjectAttributes;
 import org.sonatype.nexus.repository.storage.Asset;
@@ -24,6 +23,8 @@ import org.sonatype.nexus.repository.storage.Bucket;
 import org.sonatype.nexus.repository.storage.Component;
 import org.sonatype.nexus.repository.storage.StorageFacet;
 import org.sonatype.nexus.repository.view.payloads.TempBlob;
+
+import org.eclipse.jgit.lib.ObjectId;
 
 public class ObjectInserter
         extends org.eclipse.jgit.lib.ObjectInserter

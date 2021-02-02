@@ -21,14 +21,6 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.google.common.base.Preconditions;
-import com.google.common.io.LittleEndianDataInputStream;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.vdurmont.semver4j.Semver;
-
-import org.apache.commons.io.input.BoundedInputStream;
 import org.sonatype.goodies.common.ComponentSupport;
 import org.sonatype.nexus.plugins.cargo.CargoRegistryFacet;
 import org.sonatype.nexus.plugins.cargo.CrateCoordinates;
@@ -43,6 +35,14 @@ import org.sonatype.nexus.repository.view.Handler;
 import org.sonatype.nexus.repository.view.Response;
 import org.sonatype.nexus.repository.view.matchers.token.TokenMatcher;
 import org.sonatype.nexus.security.SecuritySystem;
+
+import com.google.common.base.Preconditions;
+import com.google.common.io.LittleEndianDataInputStream;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.vdurmont.semver4j.Semver;
+import org.apache.commons.io.input.BoundedInputStream;
 
 public final class CargoRegistryV1Handlers
 {
