@@ -22,15 +22,21 @@ If everything checks out, the bundle for cargo should be available in the `targe
 
 #### Build with Docker
 
-`docker build -t nexus-repository-cargo:0.0.1 .`
+`docker build -t nexus-repository-cargo .`
 
 #### Run as a Docker container
 
-`docker run -d -p 8081:8081 --name nexus nexus-repository-cargo:0.0.1`
+`docker run -d -p 8081:8081 --name nexus nexus-repository-cargo`
 
 For further information like how to persist volumes check out [the GitHub repo for our official image](https://github.com/sonatype/docker-nexus3).
 
-The application will now be available from your browser at http://localhost:8081
+After allowing some time to spin up, the application will be available from your browser at http://localhost:8081.
+
+To read the generated admin password for your first login to the web UI, you can use the command below against the running docker container:
+
+    docker exec -it nexus-repository-cargo cat /nexus-data/admin.password && echo
+
+For simplicity, you should check `Enable anonymous access` in the prompts following your first login.
 
 ## Using Cargo With Nexus Repository Manager 3
 
@@ -43,6 +49,7 @@ The table below outlines what version of Nexus Repository the plugin was built a
 | Plugin Version | Nexus Repository Version |
 |----------------|--------------------------|
 | v0.0.1         | 3.12.0-01                |
+| v0.0.1         | 3.29.2-02                |
 
 If a new version of Nexus Repository is released and the plugin needs changes, a new release will be made, and this
 table will be updated to indicate which version of Nexus Repository it will function against. This is done on a time 
@@ -126,11 +133,12 @@ If you are trying to use the cargo plugin permanently, it likely makes more sens
 * Make the following additions marked with + to `<nexus_dir>/system/org/sonatype/nexus/assemblies/nexus-core-feature/3.x.y/nexus-core-feature-3.x.y-features.xml`
 
    ```
-         <feature prerequisite="false" dependency="false">nexus-repository-rubygems</feature>
+         <feature prerequisite="false" dependency="false">wrap</feature>
    +     <feature prerequisite="false" dependency="false">nexus-repository-cargo</feature>
-         <feature prerequisite="false" dependency="false">nexus-repository-gitlfs</feature>
      </feature>
    ```
+   to the `<feature name="nexus-core-feature" description="org.sonatype.nexus.assemblies:nexus-core-feature" version="3.x.y.xy">` section below the last (above is an example, the exact last one may vary).
+   
    And
    ```
    + <feature name="nexus-repository-cargo" description="org.sonatype.nexus.plugins:nexus-repository-cargo" version="0.0.1">
@@ -139,6 +147,8 @@ If you are trying to use the cargo plugin permanently, it likely makes more sens
    + </feature>
     </features>
    ```
+   as the last feature.
+   
 This will cause the plugin to be loaded and started with each startup of Nexus Repository.
 
 ## The Fine Print
