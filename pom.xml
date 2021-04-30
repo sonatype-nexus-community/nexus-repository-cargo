@@ -15,6 +15,17 @@
   <name>${project.groupId}:${project.artifactId}</name>
   <inceptionYear>2018</inceptionYear>
 
+  <scm>
+    <developerConnection>scm:git:git@github.com:sonatype-nexus-community/nexus-repository-cargo.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.sonatype.nexus</groupId>
