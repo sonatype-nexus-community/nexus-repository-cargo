@@ -4,24 +4,14 @@ orbs:
   github-maven-deploy: github-maven-deploy/github-maven-deploy@1.0.5
   circleci-maven-release-orb: sonatype-nexus-community/circleci-maven-release-orb@0.0.16
 
-executors:
-  nxrm-maven-executor:
-    docker:
-      - image: circleci/openjdk:8-jdk
-    environment:
-      # limit max memory for JVM to allow more memory for non-JVM build processes (e.g. yarn)
-      MAVEN_OPTS: -Xmx2700m
-
 build-and-test-commands: &build-and-test-commands
-  executor: nxrm-maven-executor
-  mvn-build-test-command: mvn --batch-mode clean verify -PbuildKar -Dit
+  mvn-build-test-command: mvn clean verify -PbuildKar -Dit
   mvn-collect-artifacts-command: |
     mkdir -p ~/project/artifacts/junit/
     find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/project/artifacts/junit/ \;
     find . -type f -regex ".*/target/failsafe-reports/.*xml" -exec cp {} ~/project/artifacts/junit/ \;
 
 release-args: &release-args
-  executor: nxrm-maven-executor
   mvn-release-perform-command: mvn --batch-mode release:perform -s .circleci/.maven.xml -PbuildKar
   ssh-fingerprints: "2f:3e:76:05:c2:44:08:c5:29:82:50:ca:96:50:13:61"
   context: rso-base
