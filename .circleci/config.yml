@@ -23,7 +23,7 @@ build-and-test-commands: &build-and-test-commands
 release-args: &release-args
   executor: nxrm-maven-executor
   mvn-release-perform-command: mvn --batch-mode release:perform -s .circleci/.maven.xml -PbuildKar
-  ssh-fingerprints: "yo:ur:ss:hf:in:ge:rp:ri:nt:he:re..."
+  ssh-fingerprints: "2f:3e:76:05:c2:44:08:c5:29:82:50:ca:96:50:13:61"
   context: rso-base
   filters:
     branches:
