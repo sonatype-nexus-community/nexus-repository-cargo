@@ -21,7 +21,6 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Iterables;
 
 import org.sonatype.nexus.blobstore.api.Blob;
@@ -78,7 +77,7 @@ public class AssetKindMetadataAttributes
         String filename = crateAttributes.getCoordinates(component).getFileBasename() + ".json";
         asset.name(filename);
         asset.attributes().set(AssetEntityAdapter.P_ASSET_KIND, AssetKind.METADATA.name());
-        tx.setBlob(asset, filename, Suppliers.ofInstance(metadata), HASH_ALGORITHMS, null, CONTENT_TYPE_JSON, true);
+        tx.setBlob(asset, filename, () -> metadata, HASH_ALGORITHMS, null, CONTENT_TYPE_JSON, true);
         tx.saveAsset(asset);
 
         return asset;

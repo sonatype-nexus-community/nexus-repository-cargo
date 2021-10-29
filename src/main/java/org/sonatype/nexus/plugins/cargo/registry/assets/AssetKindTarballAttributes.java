@@ -20,7 +20,6 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -83,8 +82,7 @@ public class AssetKindTarballAttributes
         String tarballName = crateAttributes.getCoordinates(component).getFileBasename() + ".crate";
         asset.name(tarballName);
         asset.attributes().set(AssetEntityAdapter.P_ASSET_KIND, AssetKind.TARBALL.name());
-        tx.setBlob(asset, tarballName, Suppliers.ofInstance(tarball), HASH_ALGORITHMS, null, CONTENT_TYPE_TARBALL,
-                true);
+        tx.setBlob(asset, tarballName, () -> tarball, HASH_ALGORITHMS, null, CONTENT_TYPE_TARBALL, true);
         tx.saveAsset(asset);
 
         return asset;
