@@ -6,11 +6,11 @@ FROM maven:3-jdk-8-alpine AS build
 
 COPY . /nexus-repository-cargo/
 RUN cd /nexus-repository-cargo/; \
-    mvn clean package -PbuildKar;
+    mvn clean package;
 
 FROM sonatype/nexus3:$NEXUS_VERSION
 
 ARG DEPLOY_DIR=/opt/sonatype/nexus/deploy/
 USER root
-COPY --from=build /nexus-repository-cargo/target/nexus-repository-cargo-*-bundle.kar ${DEPLOY_DIR}
+COPY --from=build /nexus-repository-cargo/target/nexus-repository-cargo-*.jar ${DEPLOY_DIR}
 USER nexus
