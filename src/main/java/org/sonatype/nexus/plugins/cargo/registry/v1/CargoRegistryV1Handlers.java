@@ -113,7 +113,11 @@ public final class CargoRegistryV1Handlers
                     Semver crateVersion = new Semver(publishRequest.get("vers").getAsString());
                     CrateCoordinates crateId = new CrateCoordinates(crateName, crateVersion);
 
-                    return cargoImpl.publishCrate(crateId, publishRequest, tarball);
+                    Response response = cargoImpl.publishCrate(crateId, publishRequest, tarball);
+                    if (response.getStatus().isSuccessful()) {
+                        cargoImpl.rebuildIndexForCrate(crateId);
+                    }
+                    return response;
                 }
                 finally {
                     tarball.close();

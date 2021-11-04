@@ -47,7 +47,7 @@ public class AssetKindTarballAttributes
 {
     public static final String CONTENT_TYPE_TARBALL = "application/x-tar";
 
-    public static final List<HashAlgorithm> HASH_ALGORITHMS = Lists.newArrayList(HashAlgorithm.SHA1);
+    public static final List<HashAlgorithm> HASH_ALGORITHMS = Lists.newArrayList(HashAlgorithm.SHA1, HashAlgorithm.SHA256);
 
     protected final BucketEntityAdapter bucketEntityAdapter;
 

@@ -14,10 +14,14 @@
 package org.sonatype.nexus.plugins.cargo.registry;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -25,13 +29,17 @@ import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 
 import com.google.common.eventbus.Subscribe;
+import com.google.common.hash.HashCode;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
 import org.eclipse.jgit.lib.Constants;
+import org.sonatype.nexus.common.collect.AttributesMap;
+import org.sonatype.nexus.common.hash.HashAlgorithm;
 import org.sonatype.nexus.email.EmailManager;
 import org.sonatype.nexus.plugins.cargo.CargoRegistryFacet;
 import org.sonatype.nexus.plugins.cargo.CrateCoordinates;
@@ -57,6 +65,8 @@ import org.sonatype.nexus.repository.types.HostedType;
 import org.sonatype.nexus.repository.view.Content;
 import org.sonatype.nexus.repository.view.Response;
 import org.sonatype.nexus.transaction.UnitOfWork;
+
+import static org.sonatype.nexus.repository.view.Content.CONTENT_HASH_CODES_MAP;
 
 /**
  * A {@link CargoRegistryFacet} that persists Cargo crates and metadata via {@link StorageFacet}.
@@ -151,6 +161,64 @@ public class CargoRegistryFacetImpl
 
         gitFacet.replaceFile(indexRepo, this.indexBranch, "config.json",
                 config.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    @TransactionalTouchBlob
+    @TransactionalStoreMetadata
+    public void rebuildIndexForCrate(CrateCoordinates crateId) throws IOException {
+        StorageTx tx = UnitOfWork.currentTx();
+        Bucket bucket = tx.findBucket(this.getRepository());
+
+        ByteArrayOutputStream crate_index_entry = new ByteArrayOutputStream();
+
+        for (Component component : this.crateAttributes.findAllVersions(this.getRepository(),
+                crateId.getName())) {
+            Content crate_metadata_json = this.metadataAttributes.getAssetContent(bucket,
+                    component);
+
+            final AttributesMap attributesMap = tarballAttributes.getAssetContent(bucket, component).getAttributes();
+            //noinspection unchecked
+            Map<HashAlgorithm, HashCode> hashMap = (Map<HashAlgorithm, HashCode>) attributesMap.get(CONTENT_HASH_CODES_MAP);
+            HashCode sha256Hash = Objects.requireNonNull(hashMap).get(HashAlgorithm.SHA256);
+
+            try (InputStream is = crate_metadata_json.openInputStream()) {
+                try (InputStreamReader reader = new InputStreamReader(is)) {
+                    JsonObject sourceManifest = new JsonParser().parse(reader).getAsJsonObject();
+
+                    JsonObject result = new JsonObject();
+                    result.addProperty("name", sourceManifest.get("name").getAsString());
+                    result.addProperty("vers", sourceManifest.get("vers").getAsString());
+                    result.add("features", sourceManifest.get("features").getAsJsonObject());
+                    result.addProperty("cksum", sha256Hash.toString());
+
+                    JsonArray deps = new JsonArray();
+                    for (JsonElement element: sourceManifest.getAsJsonArray("deps")){
+                        JsonObject sourceObj = element.getAsJsonObject();
+                        JsonObject obj = new JsonObject();
+                        obj.addProperty("name", sourceObj.get("name").getAsString());
+                        obj.addProperty("req", sourceObj.get("version_req").getAsString());
+                        obj.add("features", sourceObj.get("features").getAsJsonArray());
+                        obj.addProperty("optional", sourceObj.get("optional").getAsBoolean());
+                        obj.addProperty("default_features", sourceObj.get("default_features").getAsBoolean());
+                        obj.addProperty("kind", "normal");
+                        obj.addProperty("registry", sourceObj.get("registry").getAsString());
+                        deps.add(obj);
+                    }
+                    result.add("deps", deps);
+
+                    result.addProperty("yanked", false);
+                    crate_index_entry.write(result.toString().getBytes(StandardCharsets.UTF_8));
+                }
+            }
+            crate_index_entry.write('\n');
+        }
+
+        GitRepositoryFacet gitFacet = this.getRepository().facet(GitRepositoryFacet.class);
+        Repository indexRepo = gitFacet.getGitRepository("index");
+
+        gitFacet.replaceFile(indexRepo, this.indexBranch, crateId.getIndexEntryPath(),
+                crate_index_entry.toByteArray());
     }
 
     @Override
