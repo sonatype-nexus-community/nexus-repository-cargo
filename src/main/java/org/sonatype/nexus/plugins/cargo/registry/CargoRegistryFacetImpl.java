@@ -202,7 +202,15 @@ public class CargoRegistryFacetImpl
                         obj.addProperty("optional", sourceObj.get("optional").getAsBoolean());
                         obj.addProperty("default_features", sourceObj.get("default_features").getAsBoolean());
                         obj.addProperty("kind", "normal");
-                        obj.addProperty("registry", sourceObj.get("registry").getAsString());
+                        /*
+                         * absent 'registry' property signifies 'from *this* registry'
+                         * https://github.com/rust-lang/cargo/blob/e1fb17631eb1b3665cdbe45b1c186111577ef512/src/cargo/ops/registry.rs#L197-L198
+                         */
+                        if (sourceObj.has("registry")) {
+                            obj.addProperty("registry", sourceObj.get("registry").getAsString());
+                        } else {
+                            obj.addProperty("registry", this.getRepository().getUrl() + "/index");
+                        }
                         deps.add(obj);
                     }
                     result.add("deps", deps);
