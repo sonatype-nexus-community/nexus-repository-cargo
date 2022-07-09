@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
 
 import javax.inject.Named;
 
@@ -52,6 +53,8 @@ public class AssetKindObjectAttributes
     private final static String P_OBJECT_TYPE = "git-object-type";
 
     private final static String CONTENT_TYPE_LOOSE_OBJECT = "application/x-git-loose-object";
+
+    private final static HashMap<String,String> EmptyMap = new HashMap<String,String>();
 
     protected BucketEntityAdapter bucketEntityAdapter;
 
@@ -88,7 +91,7 @@ public class AssetKindObjectAttributes
         // Create a blob from the contents of the InputStream. This will be a
         // unique blob but the object ID may already exist. The blob will be
         // thrown away if it isn't attached to an Asset.
-        AssetBlob assetBlob = tx.createBlob("git-object", Suppliers.ofInstance(contents), hashes, null,
+        AssetBlob assetBlob = tx.createBlob("git-object", () -> contents, hashes, EmptyMap,
                 CONTENT_TYPE_LOOSE_OBJECT, true);
 
         // If the calculated ObjectId is already saved in the object database,
