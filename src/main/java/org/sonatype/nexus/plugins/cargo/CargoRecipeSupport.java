@@ -26,7 +26,7 @@ import org.sonatype.nexus.repository.cache.NegativeCacheHandler;
 import org.sonatype.nexus.repository.http.PartialFetchHandler;
 import org.sonatype.nexus.repository.httpclient.HttpClientFacet;
 import org.sonatype.nexus.repository.purge.PurgeUnusedFacet;
-import org.sonatype.nexus.repository.search.ElasticSearchFacet;
+import org.sonatype.nexus.repository.search.index.SearchIndexFacet;
 import org.sonatype.nexus.repository.security.SecurityHandler;
 import org.sonatype.nexus.repository.storage.DefaultComponentMaintenanceImpl;
 import org.sonatype.nexus.repository.storage.StorageFacet;
@@ -55,7 +55,7 @@ public abstract class CargoRecipeSupport
     protected Provider<StorageFacet> storageFacet;
 
     @Inject
-    protected Provider<ElasticSearchFacet> searchFacet;
+    protected Provider<SearchIndexFacet> searchFacet;
 
     @Inject
     protected Provider<AttributesFacet> attributesFacet;
