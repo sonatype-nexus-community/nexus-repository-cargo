@@ -10,17 +10,55 @@
 
 ### Introduction
 
-TBD
+Cargo is the [Rust](https://www.rust-lang.org/) package manager. Rust refers to its packages as crates. Cargo is used to download Rust crate dependencies, compile distributable crates, and upload those crates to [crates.io](https://crates.io/) - the Rust community's package registry.
 
-### Proxying
+### Proxying Cargo Repositories
 
-TBD
+You can set up a Cargo proxy repository to access a remote crate index. To proxy a Cargo crate index, you simply create a new _cargo_ proxy as documented in [Repository Management](https://help.sonatype.com/repomanager3/nexus-repository-administration/repository-management#RepositoryManagement-ProxyRepository).
+
+Minimal configuration steps are:
+* Define _Name_ e.g. cargo-proxy
+* Define URL for _Remote Storage_ e.g. https://crates.io/ 
+* Select a Blob Store for _Local Storage_
 
 ### Hosting
 
-TBD
+You can set up a Cargo hosted repository to store your hosted or private crates.
 
-### Configuring Cargo 
+Minimal configuration steps are:
+* Define _Name_ e.g. cargo-hosted
+* Select a Blob Store for _Local Storage_
+
+#### Publishing Crates
+Update your `.cargo/config.toml` file as follows:
+```
+[net]
+git-fetch-with-cli = true
+
+[registries.nexus]
+registry = "http://localhost:8081/repository/cargo-hosted/index"
+```
+
+Obtain a token for authentication:
+`curl -X GET -u <username> http://localhost:8081/repository/cargo-hosted/token`
+
+Copy the token to `.cargo/credentials`:
+```
+[registries.nexus]
+token = "Bearer CargoRegistryBearerToken.<token>"
+```
+
+Publish crates to your registry using:
+`cargo publish --registry nexus`
+or
+```
+curl \
+ -u usr:psw \
+ -T example-crate-0.0.1.tar.gz \
+ http://localhost:8081/repository/cargo-hosted/example-crate-0.0.1.tar.gz
+```
+
+### Configuring Cargo Registries
 
 TBD
 
