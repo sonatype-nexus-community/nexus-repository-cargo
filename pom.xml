@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.sonatype.nexus.plugins</groupId>
     <artifactId>nexus-plugins</artifactId>
-    <version>3.30.1-01</version>
+    <version>3.40.1-01</version>
   </parent>
 
   <artifactId>nexus-repository-cargo</artifactId>
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
-      <version>5.0.1.201806211838-r</version>
+      <version>5.2.2.201904231744-r</version>
     </dependency>
 
     <dependency>
@@ -61,6 +61,12 @@
       <artifactId>semver4j</artifactId>
       <version>2.2.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.servicemix.bundles</groupId>
+      <artifactId>org.apache.servicemix.bundles.jsch</artifactId>
+      <version>0.1.54_1</version>
+    </dependency>
+
   </dependencies>
 
   <build>
