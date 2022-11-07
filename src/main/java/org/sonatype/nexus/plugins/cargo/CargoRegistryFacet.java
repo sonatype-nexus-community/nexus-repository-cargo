@@ -29,6 +29,8 @@ public interface CargoRegistryFacet
 {
     public void writeConfigJson() throws Exception;
 
+    public void rebuildIndexForCrate(CrateCoordinates crateId) throws IOException;
+
     public Response publishCrate(CrateCoordinates crateId,
                                  JsonElement metadata,
                                  InputStream tarball) throws IOException;
