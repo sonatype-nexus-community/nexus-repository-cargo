@@ -5,13 +5,13 @@ The local build runs in a docker container.
 
   * (Once) Install [CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/) (`brew install circleci`)
 
-  * Convert the “real” config.yml into a self contained (non-workspace) config via:
+  * Convert the “real” config.yml into a self-contained (non-workspace) config via:
 
         circleci config process .circleci/config.yml > .circleci/local-config.yml
 
   * Run a local build with the following command:
           
-        circleci local execute -c .circleci/local-config.yml --job 'github-maven-deploy/build-and-test'
+        circleci local execute -c .circleci/local-config.yml --job 'build_and_test'
 
     With the above command, operations that cannot occur during a local build will show an error like this:
      
@@ -28,8 +28,8 @@ Miscellaneous
 
 * Write Key setup
 
-  To allow your CI build to push changes back to github (e.g. release tags, etc), you need to create
-  a github **Deploy Key** with **write** access. The command below will create such a key. Use an empty password.
+  To allow your CI build to push changes back to GitHub (e.g. release tags, etc), you need to create
+  a GitHub **Deploy Key** with **write** access. The command below will create such a key. Use an empty password.
   See: [CircleCI-Add ssh key](https://circleci.com/docs/2.0/add-ssh-key/#steps) for more details.
   
   1. Generate a new ssh key:
