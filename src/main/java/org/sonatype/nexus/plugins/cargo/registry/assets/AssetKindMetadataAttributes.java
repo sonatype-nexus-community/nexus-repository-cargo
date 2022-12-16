@@ -21,7 +21,6 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Iterables;
 
 import org.sonatype.nexus.blobstore.api.Blob;
@@ -73,15 +72,16 @@ public class AssetKindMetadataAttributes
     @TransactionalTouchBlob
     public Asset createAsset(Bucket bucket, Component component, InputStream metadata) throws IOException {
         StorageTx tx = UnitOfWork.currentTx();
-
         Asset asset = tx.createAsset(bucket, component);
-        String filename = crateAttributes.getCoordinates(component).getFileBasename() + ".json";
-        asset.name(filename);
-        asset.attributes().set(AssetEntityAdapter.P_ASSET_KIND, AssetKind.METADATA.name());
-        tx.setBlob(asset, filename, () -> metadata, HASH_ALGORITHMS, null, CONTENT_TYPE_JSON, true);
-        tx.saveAsset(asset);
+        return save(bucket, component, tx, asset, metadata);
+    }
 
-        return asset;
+    @TransactionalTouchMetadata
+    @TransactionalTouchBlob
+    public Asset updateAsset(Bucket bucket, Component component, InputStream metadata) throws IOException {
+        StorageTx tx = UnitOfWork.currentTx();
+        Asset asset = findAsset(bucket, component);
+        return save(bucket, component, tx, asset, metadata);
     }
 
     @TransactionalTouchMetadata
@@ -119,5 +119,15 @@ public class AssetKindMetadataAttributes
         final Content content = new Content(new BlobPayload(blob, contentType));
         Content.extractFromAsset(asset, HASH_ALGORITHMS, content.getAttributes());
         return content;
+    }
+
+    private Asset save(Bucket bucket, Component component, StorageTx tx, Asset asset, InputStream metadata) throws IOException {
+        String filename = crateAttributes.getCoordinates(component).getFileBasename() + ".json";
+        asset.name(filename);
+        asset.attributes().set(AssetEntityAdapter.P_ASSET_KIND, AssetKind.METADATA.name());
+        tx.setBlob(asset, filename, () -> metadata, HASH_ALGORITHMS, null, CONTENT_TYPE_JSON, true);
+        tx.saveAsset(asset);
+
+        return asset;
     }
 }
