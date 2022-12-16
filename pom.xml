@@ -154,6 +154,19 @@
       <plugin>
         <groupId>org.apache.karaf.tooling</groupId>
         <artifactId>karaf-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <id>buildKar</id>
+            <goals>
+              <goal>kar</goal>
+            </goals>
+            <configuration>
+              <resourcesDir>${project.basedir}/src/main/kar-resources</resourcesDir>
+              <classifier>bundle</classifier>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
@@ -165,6 +178,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
         <configuration>
           <instructions>
             <Embed-Dependency>*;scope=compile|runtime;inline=true;artifactId=!slf4j*</Embed-Dependency>
