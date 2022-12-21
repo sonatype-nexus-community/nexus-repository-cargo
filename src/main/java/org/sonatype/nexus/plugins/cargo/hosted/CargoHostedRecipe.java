@@ -116,6 +116,12 @@ class CargoHostedRecipe
 
         // Crates.io API v1
         builder.route(new Route.Builder()
+                .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.GET), new LiteralMatcher("/me")))
+                .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
+                .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
+                .handler(unitOfWorkHandler).handler(tokenGetHandler).create());
+
+        builder.route(new Route.Builder()
                 .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.GET), new LiteralMatcher("/token")))
                 .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
                 .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
