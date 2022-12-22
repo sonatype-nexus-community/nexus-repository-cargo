@@ -20,8 +20,8 @@ Ext.define('NX.cargo.util.CargoRepositoryUrls', {
         'NX.util.Url'
     ]
 }, function (self) {
-    NX.coreui.util.RepositoryUrls.addRepositoryUrlStrategy('cargo', function (assetModel) {
-        var repositoryName = assetModel.get('repositoryName'), assetName = assetModel.get('name');
+    NX.coreui.util.RepositoryUrls.addRepositoryUrlStrategy('cargo', function (me, assetModel) {
+        var repositoryName = assetModel.get('repositoryName'), assetName = me.getAssetName(assetModel);
         return NX.util.Url.asLink(NX.util.Url.baseUrl + '/repository/' + repositoryName + '/' + assetName, assetName);
     });
 });
