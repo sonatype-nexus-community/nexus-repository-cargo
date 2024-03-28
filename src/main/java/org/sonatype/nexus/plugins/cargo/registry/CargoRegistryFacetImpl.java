@@ -168,6 +168,7 @@ public class CargoRegistryFacetImpl
         JsonObject config = new JsonObject();
         config.addProperty("dl", this.getRepository().getUrl() + "/api/v1/crates");
         config.addProperty("api", this.getRepository().getUrl());
+        config.addProperty("auth-required", true);
         JsonArray allowedRegistries = new JsonArray();
         allowedRegistries.add(new JsonPrimitive(this.config.allowedRegistries.toString()));
         config.add("allowed-registries", allowedRegistries);
