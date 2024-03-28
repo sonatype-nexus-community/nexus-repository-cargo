@@ -20,7 +20,6 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
@@ -77,17 +76,16 @@ public class AssetKindTarballAttributes
     @TransactionalTouchBlob
     public Asset createAsset(Bucket bucket, Component component, InputStream tarball) throws IOException {
         StorageTx tx = UnitOfWork.currentTx();
-
-        // Create an Asset to hold the new version.
         Asset asset = tx.createAsset(bucket, component);
-        String tarballName = crateAttributes.getCoordinates(component).getFileBasename() + ".crate";
-        asset.name(tarballName);
-        asset.attributes().set(AssetEntityAdapter.P_ASSET_KIND, AssetKind.TARBALL.name());
-        tx.setBlob(asset, tarballName, () -> tarball, HASH_ALGORITHMS, null, CONTENT_TYPE_TARBALL,
-                true);
-        tx.saveAsset(asset);
+        return save(bucket, component, tx, asset, tarball);
+    }
 
-        return asset;
+    @TransactionalTouchMetadata
+    @TransactionalTouchBlob
+    public Asset updateAsset(Bucket bucket, Component component, InputStream tarball) throws IOException {
+        StorageTx tx = UnitOfWork.currentTx();
+        Asset asset = findAsset(bucket, component);
+        return save(bucket, component, tx, asset, tarball);
     }
 
     @TransactionalTouchMetadata
@@ -125,5 +123,15 @@ public class AssetKindTarballAttributes
         final Content content = new Content(new BlobPayload(blob, contentType));
         Content.extractFromAsset(asset, HASH_ALGORITHMS, content.getAttributes());
         return content;
+    }
+
+    private Asset save(Bucket bucket, Component component, StorageTx tx, Asset asset, InputStream tarball) throws IOException {
+        String tarballName = crateAttributes.getCoordinates(component).getFileBasename() + ".crate";
+        asset.name(tarballName);
+        asset.attributes().set(AssetEntityAdapter.P_ASSET_KIND, AssetKind.TARBALL.name());
+        tx.setBlob(asset, tarballName, () -> tarball, HASH_ALGORITHMS, null, CONTENT_TYPE_TARBALL,
+                true);
+        tx.saveAsset(asset);
+        return asset;
     }
 }

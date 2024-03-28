@@ -52,6 +52,7 @@ import org.sonatype.nexus.repository.FacetSupport;
 import org.sonatype.nexus.repository.RepositoryStartedEvent;
 import org.sonatype.nexus.repository.config.Configuration;
 import org.sonatype.nexus.repository.config.ConfigurationFacet;
+import org.sonatype.nexus.repository.config.WritePolicy;
 import org.sonatype.nexus.repository.http.HttpResponses;
 import org.sonatype.nexus.repository.storage.Bucket;
 import org.sonatype.nexus.repository.storage.Component;
@@ -66,6 +67,7 @@ import org.sonatype.nexus.repository.view.Content;
 import org.sonatype.nexus.repository.view.Response;
 import org.sonatype.nexus.transaction.UnitOfWork;
 
+import static org.sonatype.nexus.repository.config.ConfigurationConstants.STORAGE;
 import static org.sonatype.nexus.repository.view.Content.CONTENT_HASH_CODES_MAP;
 
 /**
@@ -96,7 +98,15 @@ public class CargoRegistryFacetImpl
         public URI allowedRegistries;
     }
 
+    static class StorageConfig
+    {
+        @NotNull(groups = {HostedType.ValidationGroup.class})
+        public WritePolicy writePolicy;
+    }
+
     private Config config;
+
+    private StorageConfig storageConfig;
 
     @Inject
     protected CargoRegistryFacetImpl(EmailManager emailManager,
@@ -114,11 +124,14 @@ public class CargoRegistryFacetImpl
     protected void doValidate(final Configuration configuration) throws Exception {
         facet(ConfigurationFacet.class).validateSection(configuration, CONFIG_KEY, Config.class, Default.class,
                 getRepository().getType().getValidationGroup());
+        facet(ConfigurationFacet.class).validateSection(configuration, STORAGE, StorageConfig.class, Default.class,
+                getRepository().getType().getValidationGroup());
     }
 
     @Override
     protected void doConfigure(final Configuration configuration) throws Exception {
         config = facet(ConfigurationFacet.class).readSection(configuration, CONFIG_KEY, Config.class);
+        storageConfig = facet(ConfigurationFacet.class).readSection(configuration, STORAGE, StorageConfig.class);
     }
 
     @Override
@@ -239,19 +252,28 @@ public class CargoRegistryFacetImpl
         StorageTx tx = UnitOfWork.currentTx();
         Bucket bucket = tx.findBucket(this.getRepository());
 
-        // Abort if the request is for an existing crate.
-        Component crateComponent = this.crateAttributes.find(this.getRepository(), crateId);
-        if (crateComponent != null) {
-            return HttpResponses.forbidden("Crate version already exists");
-
+        if (!storageConfig.writePolicy.checkCreateAllowed()) {
+            return HttpResponses.forbidden("Creation is denied by write policy of this repository");
         }
 
-        crateComponent = this.crateAttributes.create(this.getRepository(), crateId);
+        // Abort if the request is for an existing crate.
+        Component crateComponent = this.crateAttributes.find(this.getRepository(), crateId);
+        if (crateComponent != null && !storageConfig.writePolicy.checkUpdateAllowed()) {
+            return HttpResponses.forbidden("Crate version already exists and update is denied by write policy of this repository");
+        }
 
-        this.metadataAttributes.createAsset(bucket, crateComponent,
-                new ByteArrayInputStream(new Gson().toJson(metadata).getBytes(StandardCharsets.UTF_8)));
-        this.tarballAttributes.createAsset(bucket, crateComponent, tarball);
-
+        if (crateComponent == null) {
+            log.info("Create new crate: " + crateId.getFileBasename());
+            crateComponent = this.crateAttributes.create(this.getRepository(), crateId);
+            this.metadataAttributes.createAsset(bucket, crateComponent,
+                    new ByteArrayInputStream(new Gson().toJson(metadata).getBytes(StandardCharsets.UTF_8)));
+            this.tarballAttributes.createAsset(bucket, crateComponent, tarball);
+        } else {
+            log.info("Updating existing crate: " + crateId.getFileBasename());
+            this.metadataAttributes.updateAsset(bucket, crateComponent,
+                    new ByteArrayInputStream(new Gson().toJson(metadata).getBytes(StandardCharsets.UTF_8)));
+            this.tarballAttributes.updateAsset(bucket, crateComponent, tarball);
+        }
         return HttpResponses.ok();
     }
 

@@ -22,7 +22,6 @@ import java.util.HashMap;
 
 import javax.inject.Named;
 
-import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
 
 import org.eclipse.jgit.lib.AbbreviatedObjectId;
