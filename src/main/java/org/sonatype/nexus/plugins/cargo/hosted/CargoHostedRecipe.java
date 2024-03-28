@@ -142,21 +142,21 @@ class CargoHostedRecipe
 
         builder.route(new Route.Builder()
                 .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.HEAD, HttpMethods.GET),
-                        new TokenMatcher("/api/v1/crates/{name:.+}/{version:.+}/download")))
+                        new TokenMatcher("/api/v1/crates/{name:.+}/{version:[0-9].*}/download")))
                 .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
                 .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
                 .handler(unitOfWorkHandler).handler(crateDownloadHandler).create());
 
         builder.route(new Route.Builder()
                 .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.HEAD, HttpMethods.GET),
-                        new TokenMatcher("/{name:.+}-{version:.+}.crate")))
+                        new TokenMatcher("/{name:.+}-{version:[0-9].*}.crate")))
                 .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
                 .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
                 .handler(unitOfWorkHandler).handler(crateDownloadHandler).create());
 
         builder.route(new Route.Builder()
                 .matcher(LogicMatchers.and(new ActionMatcher(HttpMethods.HEAD, HttpMethods.GET),
-                        new TokenMatcher("/{name:.+}-{version:.+}.json")))
+                        new TokenMatcher("/{name:.+}-{version:[0-9].*}.json")))
                 .handler(timingHandler).handler(securityHandler).handler(exceptionHandler)
                 .handler(conditionalRequestHandler).handler(partialFetchHandler).handler(contentHeadersHandler)
                 .handler(unitOfWorkHandler).handler(metadataDownloadHandler).create());
