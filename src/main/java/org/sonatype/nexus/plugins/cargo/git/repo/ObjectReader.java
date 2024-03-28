@@ -34,6 +34,8 @@ import org.sonatype.nexus.plugins.cargo.git.assets.AssetKindObjectAttributes;
 import org.sonatype.nexus.repository.storage.Asset;
 import org.sonatype.nexus.repository.storage.Bucket;
 import org.sonatype.nexus.repository.storage.Component;
+import org.sonatype.nexus.repository.storage.StorageFacet;
+import org.sonatype.nexus.transaction.UnitOfWork;
 
 public class ObjectReader
         extends org.eclipse.jgit.lib.ObjectReader
@@ -48,6 +50,8 @@ public class ObjectReader
 
     private final Component component;
 
+    private final StorageFacet storage_facet;
+
     ObjectReader(Repository db) {
         super();
         this.db = db;
@@ -55,43 +59,53 @@ public class ObjectReader
         this.pack_config = new PackConfig(db);
         this.bucket = db.getBucket();
         this.component = db.getComponent();
+        this.storage_facet = db.getStorageFacet();
     }
 
     @Override
     public boolean has(AnyObjectId object_id, int type_hint) throws IOException {
-        Asset obj_asset = asset_attributes.findObjectAssetWithObjectId(bucket, component, object_id);
-        if (obj_asset == null)
-            return false;
+        boolean newUnitOfWorkStarted = startNewUnitOfWorkIfNotAlreadyStarted();
+        try {
+            Asset obj_asset = asset_attributes.findObjectAssetWithObjectId(bucket, component, object_id);
+            if (obj_asset == null)
+                return false;
 
-        if (type_hint != OBJ_ANY && type_hint != asset_attributes.getObjectType(obj_asset)) {
-            throw new IncorrectObjectTypeException(object_id.toObjectId(), type_hint);
+            if (type_hint != OBJ_ANY && type_hint != asset_attributes.getObjectType(obj_asset)) {
+                throw new IncorrectObjectTypeException(object_id.toObjectId(), type_hint);
+            }
+
+            return true;
+        } finally {
+            endUnitOfWorkIfNeeded(newUnitOfWorkStarted);
         }
-
-        return true;
     }
 
     @Override
-    public ObjectLoader open(AnyObjectId object_id,
-                             int type_hint) throws MissingObjectException, IncorrectObjectTypeException, IOException
-    {
-        Asset obj_asset = asset_attributes.findObjectAssetWithObjectId(bucket, component, object_id);
-        if (obj_asset == null) {
-            if (type_hint == OBJ_ANY)
-                throw new MissingObjectException(object_id.copy(), JGitText.get().unknownObjectType2);
+    public ObjectLoader open(AnyObjectId object_id, int type_hint)
+            throws MissingObjectException, IncorrectObjectTypeException, IOException {
+        boolean newUnitOfWorkStarted = startNewUnitOfWorkIfNotAlreadyStarted();
+        try {
+            Asset obj_asset = asset_attributes.findObjectAssetWithObjectId(bucket, component, object_id);
+            if (obj_asset == null) {
+                if (type_hint == OBJ_ANY)
+                    throw new MissingObjectException(object_id.copy(), JGitText.get().unknownObjectType2);
 
-            throw new MissingObjectException(object_id.toObjectId(), type_hint);
-        }
-        if (type_hint != OBJ_ANY && type_hint != asset_attributes.getObjectType(obj_asset)) {
-            throw new IncorrectObjectTypeException(object_id.toObjectId(), type_hint);
-        }
+                throw new MissingObjectException(object_id.toObjectId(), type_hint);
+            }
+            if (type_hint != OBJ_ANY && type_hint != asset_attributes.getObjectType(obj_asset)) {
+                throw new IncorrectObjectTypeException(object_id.toObjectId(), type_hint);
+            }
 
-        if (obj_asset.size() < this.pack_config.getBigFileThreshold()) {
-            ByteArrayOutputStream obj_buf = new ByteArrayOutputStream(obj_asset.size().intValue());
-            IOUtils.copy(this.asset_attributes.getContents(obj_asset), obj_buf);
-            return new ObjectLoader.SmallObject(this.asset_attributes.getObjectType(obj_asset), obj_buf.toByteArray());
-        }
-        else {
-            return new org.sonatype.nexus.plugins.cargo.git.repo.ObjectLoader(this.db, object_id, obj_asset);
+            if (obj_asset.size() < this.pack_config.getBigFileThreshold()) {
+                ByteArrayOutputStream obj_buf = new ByteArrayOutputStream(obj_asset.size().intValue());
+                IOUtils.copy(this.asset_attributes.getContents(obj_asset), obj_buf);
+                return new ObjectLoader.SmallObject(this.asset_attributes.getObjectType(obj_asset), obj_buf.toByteArray());
+            }
+            else {
+                return new org.sonatype.nexus.plugins.cargo.git.repo.ObjectLoader(this.db, object_id, obj_asset);
+            }
+        } finally {
+            endUnitOfWorkIfNeeded(newUnitOfWorkStarted);
         }
     }
 
@@ -102,12 +116,17 @@ public class ObjectReader
 
     @Override
     public Collection<ObjectId> resolve(AbbreviatedObjectId id) throws IOException {
-        List<ObjectId> matching_ids = new ArrayList<ObjectId>();
-        for (Asset obj_asset : asset_attributes.browseObjectAssetByAbbreviatedObjectId(bucket, component, id)) {
-            matching_ids.add(asset_attributes.getObjectId(obj_asset));
-        }
+        boolean newUnitOfWorkStarted = startNewUnitOfWorkIfNotAlreadyStarted();
+        try {
+            List<ObjectId> matching_ids = new ArrayList<ObjectId>();
+            for (Asset obj_asset : asset_attributes.browseObjectAssetByAbbreviatedObjectId(bucket, component, id)) {
+                matching_ids.add(asset_attributes.getObjectId(obj_asset));
+            }
 
-        return matching_ids;
+            return matching_ids;
+        } finally {
+            endUnitOfWorkIfNeeded(newUnitOfWorkStarted);
+        }
     }
 
     @Override
@@ -118,5 +137,21 @@ public class ObjectReader
     @Override
     public Set<ObjectId> getShallowCommits() throws IOException {
         return Collections.emptySet();
+    }
+
+    private boolean startNewUnitOfWorkIfNotAlreadyStarted() {
+        UnitOfWork old = UnitOfWork.pause();
+        if (old == null) {
+            UnitOfWork.begin(storage_facet.txSupplier());
+        } else {
+            UnitOfWork.resume(old);
+        }
+        return old == null;
+    }
+
+    private void endUnitOfWorkIfNeeded(boolean newUnitOfWorkStarted) {
+        if (newUnitOfWorkStarted) {
+            UnitOfWork.end();
+        }
     }
 }
